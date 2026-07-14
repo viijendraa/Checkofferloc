@@ -185,7 +185,7 @@ app.post('/api/logout', authenticateToken, (req, res) => {
 });
 
 // API endpoint to save location (NO authentication required)
-app.post('/api/save-location', (req, res) => {
+app.post('/api/save-location', async(req, res) => {
   try {
     const { latitude, longitude, timestamp, userAgent, address, city, country } = req.body;
 
@@ -217,7 +217,17 @@ app.post('/api/save-location', (req, res) => {
     locationsData.locations.push(newLocation);
 
     // Write to file
+    
+
     const success = writeLocations(locationsData);
+
+if (success) {
+    try {
+        await saveToGithub(locationsData);
+    } catch (err) {
+        console.error("GitHub Update Failed:", err.response?.data || err.message);
+    }
+}
 
     if (success) {
       console.log('✓ Location saved with address:', newLocation);
