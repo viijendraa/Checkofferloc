@@ -1,18 +1,51 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Simple authentication setup
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'checkofferloc2024'; // Change this!
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'checkofferloc2024';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 
-// In-memory storage for sessions and locations
-let locationsData = {
-  locations: []
-};
+// Path to locations.json file
+const locationsFilePath = path.join(__dirname, 'locations.json');
+
+// Initialize locations file if it doesn't exist
+function initializeLocationsFile() {
+  if (!fs.existsSync(locationsFilePath)) {
+    fs.writeFileSync(locationsFilePath, JSON.stringify({ locations: [] }, null, 2));
+    console.log('✓ Created locations.json file');
+  }
+}
+
+// Read locations from file
+function readLocations() {
+  try {
+    if (fs.existsSync(locationsFilePath)) {
+      const data = fs.readFileSync(locationsFilePath, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error reading locations file:', error);
+  }
+  return { locations: [] };
+}
+
+// Write locations to file
+function writeLocations(data) {
+  try {
+    fs.writeFileSync(locationsFilePath, JSON.stringify(data, null, 2), 'utf8');
+    console.log('✓ Locations saved to file');
+    return true;
+  } catch (error) {
+    console.error('Error writing locations file:', error);
+    return false;
+  }
+}
 
 let sessions = {}; // Store session tokens
 
@@ -124,6 +157,9 @@ app.post('/api/save-location', (req, res) => {
       });
     }
 
+    // Read current locations
+    let locationsData = readLocations();
+
     // Create new location entry with address details
     const newLocation = {
       id: locationsData.locations.length + 1,
@@ -140,15 +176,23 @@ app.post('/api/save-location', (req, res) => {
     // Add to locations array
     locationsData.locations.push(newLocation);
 
-    console.log('✓ Location saved with address:', newLocation);
-    console.log(`✓ Total locations saved this session: ${locationsData.locations.length}`);
+    // Write to file
+    const success = writeLocations(locationsData);
 
-    res.json({
-      success: true,
-      message: 'Location saved successfully',
-      data: newLocation,
-      totalLocations: locationsData.locations.length
-    });
+    if (success) {
+      console.log('✓ Location saved with address:', newLocation);
+      res.json({
+        success: true,
+        message: 'Location saved successfully',
+        data: newLocation,
+        totalLocations: locationsData.locations.length
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Error saving location to file'
+      });
+    }
   } catch (error) {
     console.error('Error saving location:', error);
     res.status(500).json({
@@ -162,6 +206,7 @@ app.post('/api/save-location', (req, res) => {
 // API endpoint to get all locations (REQUIRES AUTHENTICATION)
 app.get('/api/locations', authenticateToken, (req, res) => {
   try {
+    const locationsData = readLocations();
     console.log(`✓ Authenticated user fetching locations - Total: ${locationsData.locations.length}`);
     res.json(locationsData);
   } catch (error) {
@@ -176,12 +221,23 @@ app.get('/api/locations', authenticateToken, (req, res) => {
 
 // Debug endpoint (REQUIRES AUTHENTICATION)
 app.get('/api/debug', authenticateToken, (req, res) => {
-  res.json({
-    status: 'Server is running',
-    totalLocations: locationsData.locations.length,
-    locations: locationsData.locations,
-    timestamp: new Date().toISOString()
-  });
+  try {
+    const locationsData = readLocations();
+    res.json({
+      status: 'Server is running',
+      totalLocations: locationsData.locations.length,
+      locations: locationsData.locations,
+      timestamp: new Date().toISOString(),
+      filePath: locationsFilePath,
+      fileExists: fs.existsSync(locationsFilePath)
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error in debug endpoint',
+      error: error.message
+    });
+  }
 });
 
 // Health check (public)
@@ -200,7 +256,11 @@ app.get('/api/verify-token', authenticateToken, (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
+  // Initialize locations file
+  initializeLocationsFile();
+
   console.log(`✓ Checkofferloc server running on port ${PORT}`);
+  console.log(`✓ Locations file path: ${locationsFilePath}`);
   console.log(`✓ API endpoints:`);
   console.log(`  - POST /api/login - Login with username and password`);
   console.log(`  - POST /api/logout - Logout (requires token)`);
