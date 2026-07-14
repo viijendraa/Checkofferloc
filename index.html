@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Location Demo</title>
+</head>
+<body>
+  <button onclick="getLocation()">Share My Location</button>
+  <p id="result"></p>
+
+  <script>
+    function getLocation() {
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          document.getElementById("result").innerHTML =
+            "Latitude: " + pos.coords.latitude +
+            "<br>Longitude: " + pos.coords.longitude;
+        },
+        function(err) {
+          document.getElementById("result").innerHTML =
+            "Location permission denied.";
+        }
+      );
+    }
+  </script>
+</body>
+</html>
