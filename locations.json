@@ -21,6 +21,17 @@
       "city": "Gurgaon",
       "country": "India",
       "savedAt": "2026-07-14T07:59:46.828Z"
+    },
+    {
+      "id": 3,
+      "latitude": 28.4963843,
+      "longitude": 77.0968441,
+      "timestamp": "2026-07-14T08:00:32.197Z",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36",
+      "address": "Cognizant Technology Solutions, Building 6,Tower C, DLF Cyber City, Building No. 6, DLF Cybercity footpath, Sector 25A, Gurgaon, Haryana, 122010, India",
+      "city": "Gurgaon",
+      "country": "India",
+      "savedAt": "2026-07-14T08:00:34.987Z"
     }
   ]
 }
