@@ -1,25 +1,140 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Location Demo</title>
+  <title>Check My Offers</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      max-width: 500px;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 40px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #333;
+      line-height: 1.6;
+    }
+    .success {
+      color: #28a745;
+      background: #d4edda;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .error {
+      color: #dc3545;
+      background: #f8d7da;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .info {
+      color: #0c5460;
+      background: #d1ecf1;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <button onclick="getLocation()">Share My Location</button>
-  <p id="result"></p>
+  <div class="container">
+    <h1>📍 Check My Offers</h1>
+    <button onclick="getLocation()">Check My Offers</button>
+    <div id="result"></div>
+  </div>
 
   <script>
     function getLocation() {
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = '<p class="info">Requesting location access...</p>';
+      
       navigator.geolocation.getCurrentPosition(
         function(pos) {
-          document.getElementById("result").innerHTML =
-            "Latitude: " + pos.coords.latitude +
-            "<br>Longitude: " + pos.coords.longitude;
+          const latitude = pos.coords.latitude;
+          const longitude = pos.coords.longitude;
+          const timestamp = new Date().toISOString();
+          
+          resultDiv.innerHTML = `
+            <p class="success">✓ Location captured successfully!</p>
+            <p><strong>Latitude:</strong> ${latitude}</p>
+            <p><strong>Longitude:</strong> ${longitude}</p>
+            <p><strong>Timestamp:</strong> ${timestamp}</p>
+            <p class="info">Location is being saved to the repository...</p>
+          `;
+          
+          // Send location data to server
+          saveLocationToRepo(latitude, longitude, timestamp);
         },
         function(err) {
-          document.getElementById("result").innerHTML =
-            "Location permission denied.";
+          if (err.code === 1) {
+            resultDiv.innerHTML = '<p class="error">✗ Location permission denied. Please enable location access in your browser settings.</p>';
+          } else if (err.code === 2) {
+            resultDiv.innerHTML = '<p class="error">✗ Location unavailable. Please check your device and try again.</p>';
+          } else {
+            resultDiv.innerHTML = '<p class="error">✗ Error: ' + err.message + '</p>';
+          }
         }
       );
+    }
+
+    function saveLocationToRepo(latitude, longitude, timestamp) {
+      // Prepare location data
+      const locationData = {
+        latitude: latitude,
+        longitude: longitude,
+        timestamp: timestamp,
+        userAgent: navigator.userAgent
+      };
+
+      // Send to backend API to save location
+      fetch('/api/save-location', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(locationData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        const resultDiv = document.getElementById("result");
+        if (data.success) {
+          resultDiv.innerHTML += '<p class="success">✓ Location saved to repository!</p>';
+        } else {
+          resultDiv.innerHTML += '<p class="info">Location captured but repository save requires backend setup.</p>';
+        }
+      })
+      .catch(error => {
+        console.log('Backend not configured yet. Location data:', locationData);
+      });
     }
   </script>
 </body>
