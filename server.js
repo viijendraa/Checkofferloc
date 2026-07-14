@@ -8,7 +8,11 @@ const GITHUB_OWNER = process.env.GITHUB_OWNER;
 const GITHUB_REPO = process.env.GITHUB_REPO;
 const GITHUB_FILE = "locations.json";
 
-
+console.log({
+  owner: GITHUB_OWNER,
+  repo: GITHUB_REPO,
+  path: GITHUB_FILE
+});
 
 
 const express = require('express');
