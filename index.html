@@ -38,6 +38,10 @@
       transform: translateY(-2px);
       box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
     }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
     #result {
       margin-top: 20px;
       font-size: 16px;
@@ -63,19 +67,62 @@
       border-radius: 5px;
       margin-top: 10px;
     }
+    .locations-list {
+      margin-top: 30px;
+      text-align: left;
+    }
+    .locations-list h3 {
+      color: #333;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+    .location-item {
+      background: #f9f9f9;
+      padding: 10px;
+      margin: 10px 0;
+      border-left: 4px solid #667eea;
+      border-radius: 3px;
+    }
+    .location-item p {
+      margin: 5px 0;
+      color: #555;
+    }
+    .btn-secondary {
+      background: #6c757d;
+      margin-top: 10px;
+      margin-left: 5px;
+    }
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>📍 Check My Offers</h1>
-    <button onclick="getLocation()">Check My Offers</button>
+    <button onclick="getLocation()" id="locationBtn">Check My Offers</button>
+    <button class="btn-secondary" onclick="viewLocations()" id="viewBtn">View Saved Locations</button>
     <div id="result"></div>
+    <div class="locations-list" id="locationsList" style="display:none;"></div>
   </div>
 
   <script>
+    // Get the base URL dynamically
+    const getApiUrl = () => {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:3000';
+      }
+      return window.location.origin;
+    };
+
+    const API_URL = getApiUrl();
+
     function getLocation() {
       const resultDiv = document.getElementById("result");
-      resultDiv.innerHTML = '<p class="info">Requesting location access...</p>';
+      const btn = document.getElementById("locationBtn");
+      
+      btn.disabled = true;
+      resultDiv.innerHTML = '<p class="info">⏳ Requesting location access...</p>';
       
       navigator.geolocation.getCurrentPosition(
         function(pos) {
@@ -85,20 +132,23 @@
           
           resultDiv.innerHTML = `
             <p class="success">✓ Location captured successfully!</p>
-            <p><strong>Latitude:</strong> ${latitude}</p>
-            <p><strong>Longitude:</strong> ${longitude}</p>
+            <p><strong>Latitude:</strong> ${latitude.toFixed(6)}</p>
+            <p><strong>Longitude:</strong> ${longitude.toFixed(6)}</p>
             <p><strong>Timestamp:</strong> ${timestamp}</p>
-            <p class="info">Location is being saved to the repository...</p>
+            <p class="info">💾 Saving to repository...</p>
           `;
           
           // Send location data to server
           saveLocationToRepo(latitude, longitude, timestamp);
         },
         function(err) {
+          btn.disabled = false;
           if (err.code === 1) {
             resultDiv.innerHTML = '<p class="error">✗ Location permission denied. Please enable location access in your browser settings.</p>';
           } else if (err.code === 2) {
             resultDiv.innerHTML = '<p class="error">✗ Location unavailable. Please check your device and try again.</p>';
+          } else if (err.code === 3) {
+            resultDiv.innerHTML = '<p class="error">✗ Location request timed out. Please try again.</p>';
           } else {
             resultDiv.innerHTML = '<p class="error">✗ Error: ' + err.message + '</p>';
           }
@@ -107,7 +157,6 @@
     }
 
     function saveLocationToRepo(latitude, longitude, timestamp) {
-      // Prepare location data
       const locationData = {
         latitude: latitude,
         longitude: longitude,
@@ -115,27 +164,86 @@
         userAgent: navigator.userAgent
       };
 
-      // Send to backend API to save location
-      fetch('/api/save-location', {
+      console.log('Sending location data to:', API_URL + '/api/save-location');
+      console.log('Data:', locationData);
+
+      fetch(`${API_URL}/api/save-location`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(locationData)
       })
-      .then(response => response.json())
+      .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+      })
       .then(data => {
+        console.log('Response data:', data);
         const resultDiv = document.getElementById("result");
+        const btn = document.getElementById("locationBtn");
+        btn.disabled = false;
+        
         if (data.success) {
-          resultDiv.innerHTML += '<p class="success">✓ Location saved to repository!</p>';
+          resultDiv.innerHTML += '<p class="success">✓ Location saved to repository successfully!</p>';
+          resultDiv.innerHTML += `<p class="info">📝 Entry ID: ${data.data.id}</p>`;
         } else {
-          resultDiv.innerHTML += '<p class="info">Location captured but repository save requires backend setup.</p>';
+          resultDiv.innerHTML += '<p class="error">✗ Error: ' + data.message + '</p>';
         }
       })
       .catch(error => {
-        console.log('Backend not configured yet. Location data:', locationData);
+        console.error('Error:', error);
+        const resultDiv = document.getElementById("result");
+        const btn = document.getElementById("locationBtn");
+        btn.disabled = false;
+        resultDiv.innerHTML += '<p class="error">✗ Connection error: ' + error.message + '</p>';
+        resultDiv.innerHTML += '<p class="info">Make sure the backend server is running.</p>';
       });
     }
+
+    function viewLocations() {
+      const locationsList = document.getElementById("locationsList");
+      const resultDiv = document.getElementById("result");
+      
+      console.log('Fetching locations from:', API_URL + '/api/locations');
+
+      fetch(`${API_URL}/api/locations`)
+        .then(response => response.json())
+        .then(data => {
+          console.log('Locations data:', data);
+          
+          if (data.locations && data.locations.length > 0) {
+            let html = '<h3>📍 Saved Locations (' + data.locations.length + ')</h3>';
+            
+            data.locations.forEach(loc => {
+              html += `
+                <div class="location-item">
+                  <p><strong>ID:</strong> ${loc.id}</p>
+                  <p><strong>Latitude:</strong> ${loc.latitude.toFixed(6)}</p>
+                  <p><strong>Longitude:</strong> ${loc.longitude.toFixed(6)}</p>
+                  <p><strong>Timestamp:</strong> ${new Date(loc.timestamp).toLocaleString()}</p>
+                  <p><strong>Saved At:</strong> ${new Date(loc.savedAt).toLocaleString()}</p>
+                </div>
+              `;
+            });
+            
+            locationsList.innerHTML = html;
+            locationsList.style.display = 'block';
+            resultDiv.innerHTML = '<p class="success">✓ Locations loaded successfully!</p>';
+          } else {
+            locationsList.innerHTML = '<p class="info">No locations saved yet. Click "Check My Offers" to save your location.</p>';
+            locationsList.style.display = 'block';
+            resultDiv.innerHTML = '';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching locations:', error);
+          resultDiv.innerHTML = '<p class="error">✗ Error loading locations: ' + error.message + '</p>';
+        });
+    }
+
+    // Load locations on page load
+    window.addEventListener('load', viewLocations);
   </script>
 </body>
 </html>
