@@ -98,6 +98,17 @@
       "city": "Gurgaon",
       "country": "India",
       "savedAt": "2026-07-14T08:28:07.102Z"
+    },
+    {
+      "id": 10,
+      "latitude": 27.1886327,
+      "longitude": 78.019782,
+      "timestamp": "2026-07-14T08:30:28.805Z",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/30.0 Chrome/143.0.0.0 Mobile Safari/537.36",
+      "address": "Mal ka bazar, Pipal Mandi Road, Subhash Bazaar, Civil Lines, Agra, Uttar Pradesh, 282002, India",
+      "city": "Agra",
+      "country": "India",
+      "savedAt": "2026-07-14T08:30:30.568Z"
     }
   ]
 }
