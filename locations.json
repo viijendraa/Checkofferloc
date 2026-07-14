@@ -55,6 +55,14 @@
       "timestamp": "2026-07-14T06:07:03.351Z",
       "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36",
       "savedAt": "2026-07-14T06:07:04.539Z"
+    },
+    {
+      "id": 8,
+      "latitude": 27.2088795,
+      "longitude": 78.0110233,
+      "timestamp": "2026-07-14T06:08:05.481Z",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/30.0 Chrome/143.0.0.0 Mobile Safari/537.36",
+      "savedAt": "2026-07-14T06:08:06.152Z"
     }
   ]
 }
