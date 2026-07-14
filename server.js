@@ -1,3 +1,16 @@
+const { Octokit } = require("@octokit/rest");
+
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN
+});
+
+const GITHUB_OWNER = process.env.GITHUB_OWNER;
+const GITHUB_REPO = process.env.GITHUB_REPO;
+const GITHUB_FILE = "locations.json";
+
+
+
+
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
