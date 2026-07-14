@@ -18,7 +18,7 @@
       border-radius: 10px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
       text-align: center;
-      max-width: 500px;
+      max-width: 600px;
     }
     h1 {
       color: #333;
@@ -33,6 +33,7 @@
       border-radius: 5px;
       cursor: pointer;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      margin: 5px;
     }
     button:hover {
       transform: translateY(-2px);
@@ -51,21 +52,38 @@
     .success {
       color: #28a745;
       background: #d4edda;
-      padding: 10px;
+      padding: 15px;
       border-radius: 5px;
+      margin: 10px 0;
     }
     .error {
       color: #dc3545;
       background: #f8d7da;
-      padding: 10px;
+      padding: 15px;
       border-radius: 5px;
+      margin: 10px 0;
     }
     .info {
       color: #0c5460;
       background: #d1ecf1;
-      padding: 10px;
+      padding: 15px;
       border-radius: 5px;
-      margin-top: 10px;
+      margin: 10px 0;
+    }
+    .location-details {
+      background: #f0f8ff;
+      padding: 15px;
+      border-left: 5px solid #667eea;
+      margin: 10px 0;
+      text-align: left;
+      border-radius: 5px;
+    }
+    .location-details p {
+      margin: 8px 0;
+      color: #333;
+    }
+    .location-details strong {
+      color: #667eea;
     }
     .locations-list {
       margin-top: 30px;
@@ -78,14 +96,18 @@
     }
     .location-item {
       background: #f9f9f9;
-      padding: 10px;
-      margin: 10px 0;
+      padding: 15px;
+      margin: 15px 0;
       border-left: 4px solid #667eea;
       border-radius: 3px;
     }
     .location-item p {
       margin: 5px 0;
       color: #555;
+      font-size: 14px;
+    }
+    .location-item strong {
+      color: #667eea;
     }
     .btn-secondary {
       background: #6c757d;
@@ -94,6 +116,19 @@
     }
     .btn-secondary:hover {
       background: #5a6268;
+    }
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -117,6 +152,44 @@
 
     const API_URL = getApiUrl();
 
+    // Reverse geocoding function using OpenStreetMap Nominatim
+    async function getAddressFromCoordinates(latitude, longitude) {
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`;
+        
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'CheckofferlocApp'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Geocoding service unavailable');
+        }
+        
+        const data = await response.json();
+        
+        return {
+          fullAddress: data.display_name || 'Address not found',
+          city: data.address?.city || data.address?.town || 'N/A',
+          state: data.address?.state || 'N/A',
+          country: data.address?.country || 'N/A',
+          postcode: data.address?.postcode || 'N/A',
+          road: data.address?.road || 'N/A'
+        };
+      } catch (error) {
+        console.error('Geocoding error:', error);
+        return {
+          fullAddress: 'Address lookup failed',
+          city: 'N/A',
+          state: 'N/A',
+          country: 'N/A',
+          postcode: 'N/A',
+          road: 'N/A'
+        };
+      }
+    }
+
     function getLocation() {
       const resultDiv = document.getElementById("result");
       const btn = document.getElementById("locationBtn");
@@ -125,21 +198,45 @@
       resultDiv.innerHTML = '<p class="info">⏳ Requesting location access...</p>';
       
       navigator.geolocation.getCurrentPosition(
-        function(pos) {
+        async function(pos) {
           const latitude = pos.coords.latitude;
           const longitude = pos.coords.longitude;
           const timestamp = new Date().toISOString();
           
           resultDiv.innerHTML = `
             <p class="success">✓ Location captured successfully!</p>
-            <p><strong>Latitude:</strong> ${latitude.toFixed(6)}</p>
-            <p><strong>Longitude:</strong> ${longitude.toFixed(6)}</p>
-            <p><strong>Timestamp:</strong> ${timestamp}</p>
+            <div class="location-details">
+              <p><strong>Latitude:</strong> ${latitude.toFixed(6)}</p>
+              <p><strong>Longitude:</strong> ${longitude.toFixed(6)}</p>
+              <p><strong>Timestamp:</strong> ${new Date(timestamp).toLocaleString()}</p>
+            </div>
+            <p class="info">🔍 <span class="loading"></span> Getting exact address...</p>
+          `;
+          
+          // Get address from coordinates
+          const addressData = await getAddressFromCoordinates(latitude, longitude);
+          
+          resultDiv.innerHTML = `
+            <p class="success">✓ Location captured successfully!</p>
+            <div class="location-details">
+              <p><strong>📍 Full Address:</strong></p>
+              <p style="font-size: 15px; color: #667eea;">${addressData.fullAddress}</p>
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 10px 0;">
+              <p><strong>City:</strong> ${addressData.city}</p>
+              <p><strong>State:</strong> ${addressData.state}</p>
+              <p><strong>Country:</strong> ${addressData.country}</p>
+              <p><strong>Postal Code:</strong> ${addressData.postcode}</p>
+              <p><strong>Road:</strong> ${addressData.road}</p>
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 10px 0;">
+              <p><strong>Latitude:</strong> ${latitude.toFixed(6)}</p>
+              <p><strong>Longitude:</strong> ${longitude.toFixed(6)}</p>
+              <p><strong>Timestamp:</strong> ${new Date(timestamp).toLocaleString()}</p>
+            </div>
             <p class="info">💾 Saving to repository...</p>
           `;
           
           // Send location data to server
-          saveLocationToRepo(latitude, longitude, timestamp);
+          saveLocationToRepo(latitude, longitude, timestamp, addressData);
         },
         function(err) {
           btn.disabled = false;
@@ -156,12 +253,15 @@
       );
     }
 
-    function saveLocationToRepo(latitude, longitude, timestamp) {
+    function saveLocationToRepo(latitude, longitude, timestamp, addressData) {
       const locationData = {
         latitude: latitude,
         longitude: longitude,
         timestamp: timestamp,
-        userAgent: navigator.userAgent
+        userAgent: navigator.userAgent,
+        address: addressData.fullAddress,
+        city: addressData.city,
+        country: addressData.country
       };
 
       console.log('Sending location data to:', API_URL + '/api/save-location');
@@ -174,10 +274,7 @@
         },
         body: JSON.stringify(locationData)
       })
-      .then(response => {
-        console.log('Response status:', response.status);
-        return response.json();
-      })
+      .then(response => response.json())
       .then(data => {
         console.log('Response data:', data);
         const resultDiv = document.getElementById("result");
@@ -197,7 +294,6 @@
         const btn = document.getElementById("locationBtn");
         btn.disabled = false;
         resultDiv.innerHTML += '<p class="error">✗ Connection error: ' + error.message + '</p>';
-        resultDiv.innerHTML += '<p class="info">Make sure the backend server is running.</p>';
       });
     }
 
@@ -219,8 +315,9 @@
               html += `
                 <div class="location-item">
                   <p><strong>ID:</strong> ${loc.id}</p>
-                  <p><strong>Latitude:</strong> ${loc.latitude.toFixed(6)}</p>
-                  <p><strong>Longitude:</strong> ${loc.longitude.toFixed(6)}</p>
+                  <p><strong>📍 Address:</strong> ${loc.address || 'N/A'}</p>
+                  <p><strong>City:</strong> ${loc.city || 'N/A'} | <strong>Country:</strong> ${loc.country || 'N/A'}</p>
+                  <p><strong>Coordinates:</strong> ${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}</p>
                   <p><strong>Timestamp:</strong> ${new Date(loc.timestamp).toLocaleString()}</p>
                   <p><strong>Saved At:</strong> ${new Date(loc.savedAt).toLocaleString()}</p>
                 </div>
