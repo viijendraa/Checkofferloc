@@ -35,6 +35,33 @@ function initializeLocationsFile() {
   }
 }
 
+
+async function saveToGithub(locationsData) {
+
+  const file = await octokit.repos.getContent({
+    owner: GITHUB_OWNER,
+    repo: GITHUB_REPO,
+    path: GITHUB_FILE
+  });
+
+  const sha = file.data.sha;
+
+  const content = Buffer.from(
+    JSON.stringify(locationsData, null, 2)
+  ).toString("base64");
+
+  await octokit.repos.createOrUpdateFileContents({
+    owner: GITHUB_OWNER,
+    repo: GITHUB_REPO,
+    path: GITHUB_FILE,
+    message: "Update locations",
+    content,
+    sha
+  });
+
+  console.log("✓ GitHub locations.json updated");
+}
+
 // Read locations from file
 function readLocations() {
   try {
