@@ -120,6 +120,17 @@
       "city": "Gurgaon",
       "country": "India",
       "savedAt": "2026-07-14T17:30:31.666Z"
+    },
+    {
+      "id": 12,
+      "latitude": 28.44584,
+      "longitude": 77.0342676,
+      "timestamp": "2026-07-15T04:10:23.510Z",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36",
+      "address": "Sector 15-II, Gurgaon, Haryana, 122001, India",
+      "city": "Gurgaon",
+      "country": "India",
+      "savedAt": "2026-07-15T04:10:24.326Z"
     }
   ]
 }
